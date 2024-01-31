@@ -23,7 +23,7 @@ jobs:
       - name: Publish to Conda
         uses: amauryval/publish_conda_package_action@2.0.3
         with:
-          CondaDir: 'py/conda'
+          CondaDir: 'py/h2o_wave/conda'
           Platforms: 'noarch'
           CondaUsername: ${{ secrets.CONDA_USERNAME }}
           CondaPassword: ${{ secrets.CONDA_PASSWORD }}

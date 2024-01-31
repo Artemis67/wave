@@ -8,19 +8,22 @@ from hatchling.metadata.plugin.interface import MetadataHookInterface
 
 class CustomMetadataHook(MetadataHookInterface):
     def update(self, metadata: dict) -> None:
+        print('======> HATCH SETTING VERSION !!!! <======', os.environ.get('VERSION'))
         metadata['version'] = os.environ.get('VERSION', metadata['version'])
 
 
 class CustomBuildHook(BuildHookInterface):
     def initialize(self, _version, build_data):
+        print('======> HATCH !!!! <======')
         platform = os.environ.get('H2O_WAVE_PLATFORM')
+        print(f'Building for platform: {platform}')
         if not platform:
             return
 
         build_data['tag'] = f'py3-none-{platform}'
         build_data['pure_python'] = False
 
-        version = os.environ.get('VERSION')
+        version = os.environ.get('VERSION', '1.0.0')
         if not version:
             raise Exception('VERSION environment variable must be set.')
 
@@ -31,12 +34,15 @@ class CustomBuildHook(BuildHookInterface):
         elif platform == 'manylinux1_x86_64':
             operating_system = 'linux'
 
-        binaries_path = os.path.join('..', '..', 'build', f'wave-{version}-{operating_system}-{arch}')
+        print('==========>>> CWD:', os. getcwd())
+        # binaries_path = os.path.join('..', '..', 'build', f'wave-{version}-{operating_system}-{arch}')
+        binaries_path = os.path.join('conda', 'bin')
         if not os.path.exists(binaries_path):
             raise Exception(f'{binaries_path} does not exist. Run make release first to generate server binaries.')
 
         self.copy_files(binaries_path, 'tmp', ['demo', 'examples', 'test'])
         self.copy_files('project_templates', 'tmp', [], True)
+        shutil.rmtree(binaries_path, ignore_errors=True) # Only if conda!!
 
         # Create a metadata file to get easy access to platform/OS arch when needed.
         with open(os.path.join('h2o_wave', 'metadata.py'), 'w') as f:
@@ -44,6 +50,7 @@ class CustomBuildHook(BuildHookInterface):
 # Generated in hatch_build.py.
 __platform__ = "{operating_system}"
 __arch__ = "{arch}"
+__binaries33__ = "{binaries_path}"
         ''')
 
     def copy_files(self, src, dst, ignore, keep_dir=False) -> None:
@@ -58,3 +65,5 @@ __arch__ = "{arch}"
 
     def finalize(self, version: str, build_data: Dict[str, Any], artifact_path: str) -> None:
         shutil.rmtree('tmp', ignore_errors=True)
+        shutil.rmtree('info/recipe/bin', ignore_errors=True) # Conda only!!
+
